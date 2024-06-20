@@ -9,9 +9,10 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.dailyplanner.ui.theme.DailyPlannerTheme
@@ -26,7 +27,12 @@ class SplashScreenActivity : ComponentActivity() {
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
-                    Image(painter = painterResource(id = R.drawable.daily_planner), contentDescription = null)
+                    Image(
+                        painter = painterResource(id = R.drawable.daily_planner),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(100.dp))
+                    )
                 }
             }
         }

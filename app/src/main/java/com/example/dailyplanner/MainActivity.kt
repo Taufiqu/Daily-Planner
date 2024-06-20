@@ -1,5 +1,7 @@
 package com.example.dailyplanner
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -7,25 +9,51 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.dailyplanner.ui.theme.DailyPlannerTheme
-import io.github.boguszpawlowski.composecalendar.ComposeCalendar
-import io.github.boguszpawlowski.composecalendar.rememberSelectableCalendarState
-import kotlinx.datetime.LocalDate
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Calendar
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("MainActivity", "onCreate called")
@@ -44,6 +72,7 @@ class MainActivity : ComponentActivity() {
 
 data class Task(val description: String, val deadline: String, val category: String)
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DailyPlannerApp() {
     var taskDescription by remember { mutableStateOf("") }
@@ -52,7 +81,6 @@ fun DailyPlannerApp() {
     var taskList by remember { mutableStateOf(listOf<Task>()) }
     var showSnackbar by remember { mutableStateOf(false) }
     var currentEditIndex by remember { mutableStateOf(-1) }
-    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
     Column(
         modifier = Modifier
@@ -62,11 +90,12 @@ fun DailyPlannerApp() {
         Text(
             text = "Daily Planner",
             style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(bottom = 16.dp)
+            color = Color.Black,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.Yellow)
+                .padding(8.dp)
         )
-        CalendarView(tasks = taskList, onDateSelected = { date ->
-            selectedDate = date
-        })
         Spacer(modifier = Modifier.height(16.dp))
         TaskInput(
             taskDescription = taskDescription,
@@ -140,7 +169,7 @@ fun Day(date: LocalDate, tasks: List<Task>) {
     }
 }
 
-
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TaskInput(
     taskDescription: String,
@@ -151,6 +180,31 @@ fun TaskInput(
     onTaskCategoryChange: (String) -> Unit,
     onAddTask: () -> Unit
 ) {
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+
+    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            val timePickerDialog = TimePickerDialog(
+                context,
+                { _, hourOfDay, minute ->
+                    val selectedDateTime = LocalDateTime.of(year, month + 1, dayOfMonth, hourOfDay, minute)
+                    onTaskDeadlineChange(selectedDateTime.format(dateFormatter))
+                },
+                calendar.get(Calendar.HOUR_OF_DAY),
+                calendar.get(Calendar.MINUTE),
+                true
+            )
+            timePickerDialog.show()
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
+
     Column {
         TextField(
             value = taskDescription,
@@ -163,17 +217,27 @@ fun TaskInput(
                 imeAction = ImeAction.Next
             )
         )
-        TextField(
-            value = taskDeadline,
-            onValueChange = onTaskDeadlineChange,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
-            label = { Text(text = "Deadline") },
-            keyboardOptions = KeyboardOptions.Default.copy(
-                imeAction = ImeAction.Next
+                .padding(8.dp)
+        ) {
+            TextField(
+                value = taskDeadline,
+                onValueChange = {},
+                enabled = false,
+                modifier = Modifier.weight(1f),
+                label = { Text(text = "Deadline") },
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.None
+                )
             )
-        )
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(onClick = { datePickerDialog.show() }) {
+                Text(text = "Pick Date")
+            }
+        }
         TextField(
             value = taskCategory,
             onValueChange = onTaskCategoryChange,
@@ -203,75 +267,66 @@ fun TaskList(
     onEditTask: (Int, Task) -> Unit,
     onDeleteTask: (Int) -> Unit
 ) {
-    Column {
-        for ((index, task) in tasks.withIndex()) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                elevation = CardDefaults.cardElevation(4.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(text = task.description, style = MaterialTheme.typography.titleMedium)
-                        Text(text = "Deadline: ${task.deadline}", style = MaterialTheme.typography.bodyMedium)
-                        Text(text = "Category: ${task.category}", style = MaterialTheme.typography.bodyMedium)
-                    }
-                    IconButton(
-                        onClick = { onEditTask(index, task) }
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.edit_fill),
-                            contentDescription = "Edit Task"
-                        )
-                    }
-                    IconButton(
-                        onClick = { onDeleteTask(index) }
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.delete_bin_line),
-                            contentDescription = "Delete Task"
-                        )
-                    }
-                }
-            }
+    LazyColumn {
+        items(tasks.size) { index ->
+            val task = tasks[index]
+            TaskItem(
+                task = task,
+                onEditTask = { onEditTask(index, task) },
+                onDeleteTask = { onDeleteTask(index) }
+            )
         }
     }
 }
 
 @Composable
-fun CalendarView(tasks: List<Task>, onDateSelected: (LocalDate) -> Unit) {
-    val calendarState = rememberSelectableCalendarState()
-    val selectedDate = calendarState.selectionState.value
-
-    Column {
-        ComposeCalendar(
-            state = calendarState,
-            dayContent = { day ->
-                Day(
-                    date = day.date,
-                    tasks = tasks.filter { task -> LocalDate.parse(task.deadline) == day.date }
+fun TaskItem(
+    task: Task,
+    onEditTask: () -> Unit,
+    onDeleteTask: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(text = task.description, style = MaterialTheme.typography.titleMedium)
+                Text(text = "Deadline: ${task.deadline}", style = MaterialTheme.typography.bodyMedium)
+                Text(text = "Category: ${task.category}", style = MaterialTheme.typography.bodyMedium)
+            }
+            IconButton(
+                onClick = onEditTask
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.edit_fill),
+                    contentDescription = "Edit Task",
+                    modifier = Modifier
+                        .size(24.dp)
                 )
             }
-        )
-        if (selectedDate != null) {
-            val tasksForSelectedDate = tasks.filter { task ->
-                LocalDate.parse(task.deadline) == selectedDate
+            IconButton(
+                onClick = onDeleteTask
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.delete_bin_line),
+                    contentDescription = "Delete Task",
+                    modifier = Modifier
+                        .size(24.dp)
+                )
             }
-            Text("Tasks for ${selectedDate.dayOfMonth} ${selectedDate.month.name.lowercase().replaceFirstChar { it.uppercase() }}")
-            for (task in tasksForSelectedDate) {
-                Text(task.description)
-            }
-            onDateSelected(selectedDate)
         }
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
