@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,10 +17,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -40,7 +43,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
@@ -82,77 +89,116 @@ fun DailyPlannerApp() {
     var showSnackbar by remember { mutableStateOf(false) }
     var currentEditIndex by remember { mutableStateOf(-1) }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .background(Color(0xFFF5F5F5))
     ) {
-        Text(
-            text = "Daily Planner",
-            style = MaterialTheme.typography.headlineSmall,
-            color = Color.Black,
+        Image(
+            painter = painterResource(id = R.drawable.background),
+            contentDescription = null,
             modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.Yellow)
-                .padding(8.dp)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        TaskInput(
-            taskDescription = taskDescription,
-            taskDeadline = taskDeadline,
-            taskCategory = taskCategory,
-            onTaskDescriptionChange = { taskDescription = it },
-            onTaskDeadlineChange = { taskDeadline = it },
-            onTaskCategoryChange = { taskCategory = it },
-            onAddTask = {
-                if (taskDescription.isNotBlank() && taskDeadline.isNotBlank() && taskCategory.isNotBlank()) {
-                    if (currentEditIndex >= 0) {
-                        taskList = taskList.toMutableList().also {
-                            it[currentEditIndex] = Task(taskDescription, taskDeadline, taskCategory)
-                        }
-                        currentEditIndex = -1
-                    } else {
-                        taskList = taskList + Task(taskDescription, taskDeadline, taskCategory)
-                    }
-                    taskDescription = ""
-                    taskDeadline = ""
-                    taskCategory = ""
-                    showSnackbar = true
-                }
-            }
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        TaskList(
-            tasks = taskList,
-            onEditTask = { index, task ->
-                taskDescription = task.description
-                taskDeadline = task.deadline
-                taskCategory = task.category
-                currentEditIndex = index
-            },
-            onDeleteTask = { index ->
-                taskList = taskList.toMutableList().also { it.removeAt(index) }
-                if (currentEditIndex == index) {
-                    currentEditIndex = -1
-                    taskDescription = ""
-                    taskDeadline = ""
-                    taskCategory = ""
-                } else if (currentEditIndex > index) {
-                    currentEditIndex -= 1
-                }
-            }
+                .fillMaxSize()
+                .scale(1.3f)
+                .offset(y = -60.dp)
         )
 
-        if (showSnackbar) {
-            Snackbar(
-                action = {
-                    TextButton(onClick = { showSnackbar = false }) {
-                        Text("OK")
-                    }
-                },
-                modifier = Modifier.padding(8.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp, horizontal = 24.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Text("Task added")
+                Box(
+                    modifier = Modifier
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color(0xFFFFA726), Color(0xFFFF7043), Color(0xFFFF5722))
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "Daily Planner",
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            shadow = Shadow(
+                                color = Color.Black,
+                                offset = Offset(4f, 4f),
+                            )
+                        ),
+                        color = Color.White,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                    )
+                }
+            }
+
+
+
+            Spacer(modifier = Modifier.height(16.dp))
+            TaskInput(
+                taskDescription = taskDescription,
+                taskDeadline = taskDeadline,
+                taskCategory = taskCategory,
+                onTaskDescriptionChange = { taskDescription = it },
+                onTaskDeadlineChange = { taskDeadline = it },
+                onTaskCategoryChange = { taskCategory = it },
+                onAddTask = {
+                    if (taskDescription.isNotBlank() && taskDeadline.isNotBlank() && taskCategory.isNotBlank()) {
+                        if (currentEditIndex >= 0) {
+                            taskList = taskList.toMutableList().also {
+                                it[currentEditIndex] = Task(taskDescription, taskDeadline, taskCategory)
+                            }
+                            currentEditIndex = -1
+                        } else {
+                            taskList = taskList + Task(taskDescription, taskDeadline, taskCategory)
+                        }
+                        taskDescription = ""
+                        taskDeadline = ""
+                        taskCategory = ""
+                        showSnackbar = true
+                    }
+                }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            TaskList(
+                tasks = taskList,
+                onEditTask = { index, task ->
+                    taskDescription = task.description
+                    taskDeadline = task.deadline
+                    taskCategory = task.category
+                    currentEditIndex = index
+                },
+                onDeleteTask = { index ->
+                    taskList = taskList.toMutableList().also { it.removeAt(index) }
+                    if (currentEditIndex == index) {
+                        currentEditIndex = -1
+                        taskDescription = ""
+                        taskDeadline = ""
+                        taskCategory = ""
+                    } else if (currentEditIndex > index) {
+                        currentEditIndex -= 1
+                    }
+                }
+            )
+
+            if (showSnackbar) {
+                Snackbar(
+                    action = {
+                        TextButton(onClick = { showSnackbar = false }) {
+                            Text("OK")
+                        }
+                    },
+                    modifier = Modifier.padding(8.dp)
+                ) {
+                    Text("Task added")
+                }
             }
         }
     }
@@ -211,6 +257,8 @@ fun TaskInput(
             onValueChange = onTaskDescriptionChange,
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(8.dp)
+                .background(Color.White, RoundedCornerShape(8.dp))
                 .padding(8.dp),
             label = { Text(text = "Task Description") },
             keyboardOptions = KeyboardOptions.Default.copy(
@@ -227,7 +275,10 @@ fun TaskInput(
                 value = taskDeadline,
                 onValueChange = {},
                 enabled = false,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .background(Color.White, RoundedCornerShape(8.dp))
+                    .padding(8.dp),
                 label = { Text(text = "Deadline") },
                 keyboardOptions = KeyboardOptions.Default.copy(
                     imeAction = ImeAction.None
@@ -243,6 +294,8 @@ fun TaskInput(
             onValueChange = onTaskCategoryChange,
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(8.dp)
+                .background(Color.White, RoundedCornerShape(8.dp))
                 .padding(8.dp),
             label = { Text(text = "Category") },
             keyboardOptions = KeyboardOptions.Default.copy(
@@ -255,6 +308,9 @@ fun TaskInput(
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
                 .padding(top = 16.dp)
+                .height(48.dp)
+                .padding(horizontal = 32.dp),
+            shape = RoundedCornerShape(8.dp)
         ) {
             Text("Add Task")
         }
@@ -288,8 +344,9 @@ fun TaskItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+            .padding(vertical = 4.dp, horizontal = 8.dp),
+        elevation = CardDefaults.cardElevation(8.dp),
+        shape = RoundedCornerShape(8.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -308,8 +365,7 @@ fun TaskItem(
                 Icon(
                     painter = painterResource(id = R.drawable.edit_fill),
                     contentDescription = "Edit Task",
-                    modifier = Modifier
-                        .size(24.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
             IconButton(
@@ -318,8 +374,7 @@ fun TaskItem(
                 Icon(
                     painter = painterResource(id = R.drawable.delete_bin_line),
                     contentDescription = "Delete Task",
-                    modifier = Modifier
-                        .size(24.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
