@@ -54,7 +54,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.dailyplanner.ui.theme.DailyPlannerTheme
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
@@ -88,6 +87,7 @@ fun DailyPlannerApp() {
     var taskList by remember { mutableStateOf(listOf<Task>()) }
     var showSnackbar by remember { mutableStateOf(false) }
     var currentEditIndex by remember { mutableStateOf(-1) }
+    var searchQuery by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier
@@ -135,11 +135,8 @@ fun DailyPlannerApp() {
                         ),
                         modifier = Modifier.align(Alignment.Center)
                     )
-
                 }
             }
-
-
 
             Spacer(modifier = Modifier.height(16.dp))
             TaskInput(
@@ -167,8 +164,26 @@ fun DailyPlannerApp() {
                 }
             )
             Spacer(modifier = Modifier.height(16.dp))
+            TextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .background(Color.White, RoundedCornerShape(8.dp))
+                    .padding(8.dp),
+                label = { Text(text = "Search Tasks") },
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.Search
+                )
+            )
+            Spacer(modifier = Modifier.height(16.dp))
             TaskList(
-                tasks = taskList,
+                tasks = taskList.filter {
+                    it.description.contains(searchQuery, ignoreCase = true) ||
+                            it.deadline.contains(searchQuery, ignoreCase = true) ||
+                            it.category.contains(searchQuery, ignoreCase = true)
+                },
                 onEditTask = { index, task ->
                     taskDescription = task.description
                     taskDeadline = task.deadline
@@ -200,17 +215,6 @@ fun DailyPlannerApp() {
                     Text("Task added")
                 }
             }
-        }
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-fun Day(date: LocalDate, tasks: List<Task>) {
-    Box(modifier = Modifier.padding(4.dp)) {
-        Text(date.dayOfMonth.toString())
-        if (tasks.isNotEmpty()) {
-            Box(modifier = Modifier.size(8.dp).background(Color.Red))
         }
     }
 }
@@ -285,8 +289,11 @@ fun TaskInput(
                 )
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = { datePickerDialog.show() }) {
-                Text(text = "Pick Date")
+            Button(
+                onClick = { datePickerDialog.show() },
+                modifier = Modifier.padding(8.dp)
+            ) {
+                Text("Pict Date")
             }
         }
         TextField(
@@ -301,16 +308,15 @@ fun TaskInput(
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Done
             ),
-            keyboardActions = KeyboardActions(onDone = { onAddTask() })
+            keyboardActions = KeyboardActions(
+                onDone = { onAddTask() }
+            )
         )
         Button(
             onClick = onAddTask,
             modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(top = 16.dp)
-                .height(48.dp)
-                .padding(horizontal = 32.dp),
-            shape = RoundedCornerShape(8.dp)
+                .align(Alignment.End)
+                .padding(8.dp)
         ) {
             Text("Add Task")
         }
@@ -323,59 +329,45 @@ fun TaskList(
     onEditTask: (Int, Task) -> Unit,
     onDeleteTask: (Int) -> Unit
 ) {
-    LazyColumn {
+    LazyColumn(
+        modifier = Modifier.fillMaxWidth()
+    ) {
         items(tasks.size) { index ->
             val task = tasks[index]
-            TaskItem(
-                task = task,
-                onEditTask = { onEditTask(index, task) },
-                onDeleteTask = { onDeleteTask(index) }
-            )
-        }
-    }
-}
-
-@Composable
-fun TaskItem(
-    task: Task,
-    onEditTask: () -> Unit,
-    onDeleteTask: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp, horizontal = 8.dp),
-        elevation = CardDefaults.cardElevation(8.dp),
-        shape = RoundedCornerShape(8.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Column(
-                modifier = Modifier.weight(1f)
+            Card(
+                shape = RoundedCornerShape(8.dp),
+                elevation = CardDefaults.cardElevation(4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
             ) {
-                Text(text = task.description, style = MaterialTheme.typography.titleMedium)
-                Text(text = "Deadline: ${task.deadline}", style = MaterialTheme.typography.bodyMedium)
-                Text(text = "Category: ${task.category}", style = MaterialTheme.typography.bodyMedium)
-            }
-            IconButton(
-                onClick = onEditTask
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.edit_fill),
-                    contentDescription = "Edit Task",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            IconButton(
-                onClick = onDeleteTask
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.delete_bin_line),
-                    contentDescription = "Delete Task",
-                    modifier = Modifier.size(24.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(text = task.description, style = MaterialTheme.typography.bodyLarge)
+                        Text(text = task.deadline, style = MaterialTheme.typography.bodyMedium)
+                        Text(text = task.category, style = MaterialTheme.typography.bodyMedium)
+                    }
+                    IconButton(onClick = { onEditTask(index, task) }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.edit_fill),
+                            contentDescription = "Edit",
+                            modifier = Modifier.size(24.dp) // Atur ukuran ikon di sini
+                        )
+                    }
+                    IconButton(onClick = { onDeleteTask(index) }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.delete_bin_line),
+                            contentDescription = "Delete",
+                            modifier = Modifier.size(24.dp) // Atur ukuran ikon di sini
+                        )
+                    }
+                }
             }
         }
     }
