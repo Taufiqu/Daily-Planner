@@ -126,16 +126,16 @@ fun DailyPlannerApp() {
                 ) {
                     Text(
                         text = "Daily Planner",
+                        color = Color(0xFFF4F4F4), // Set text color here
                         style = MaterialTheme.typography.headlineSmall.copy(
                             shadow = Shadow(
                                 color = Color.Black,
                                 offset = Offset(4f, 4f),
                             )
                         ),
-                        color = Color.White,
-                        modifier = Modifier
-                            .align(Alignment.Center)
+                        modifier = Modifier.align(Alignment.Center)
                     )
+
                 }
             }
 
