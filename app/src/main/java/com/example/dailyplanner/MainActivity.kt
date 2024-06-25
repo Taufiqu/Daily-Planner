@@ -111,31 +111,16 @@ fun DailyPlannerApp() {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 16.dp, horizontal = 24.dp),
+                    .padding(top=20.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Box(
+                Image(
+                    painter = painterResource(id = R.drawable.daily_planner_10x4),
+                    contentDescription = null,
                     modifier = Modifier
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(Color(0xFFFFA726), Color(0xFFFF7043), Color(0xFFFF5722))
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = "Daily Planner",
-                        color = Color(0xFFF4F4F4), // Set text color here
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            shadow = Shadow(
-                                color = Color.Black,
-                                offset = Offset(4f, 4f),
-                            )
-                        ),
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
+                        .width(250.dp)
+                        .height(100.dp)
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -150,7 +135,8 @@ fun DailyPlannerApp() {
                     if (taskDescription.isNotBlank() && taskDeadline.isNotBlank() && taskCategory.isNotBlank()) {
                         if (currentEditIndex >= 0) {
                             taskList = taskList.toMutableList().also {
-                                it[currentEditIndex] = Task(taskDescription, taskDeadline, taskCategory)
+                                it[currentEditIndex] =
+                                    Task(taskDescription, taskDeadline, taskCategory)
                             }
                             currentEditIndex = -1
                         } else {
